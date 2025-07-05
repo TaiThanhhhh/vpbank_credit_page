@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="credit-lookup-card">
+        <h2 class="card-title">CREDIT SCORE LOOK-UP</h2>
+        
+        <form id="creditForm" class="credit-form">
+            <div class="form-group">
+                <label for="fullName">Full Name:</label>
+                <input type="text" id="fullName" name="full_name" placeholder="NGUYEN VAN A" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="nationalId">National ID No.</label>
+                <input type="text" id="nationalId" name="national_id" placeholder="001*******" required>
+            </div>
+            
+            <button type="submit" class="search-btn">
+                <i class="fas fa-search"></i> Search
+            </button>
+        </form>
+        
+        <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Đang tra cứu thông tin...</p>
+        </div>
+        
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+        
+        <div id="creditResult" class="credit-result" style="display: none;">
+            <h3>User's Credit Score</h3>
+            
+            <div class="score-display">
+                <div class="score-circle">
+                    <div class="score-number" id="scoreNumber">735</div>
+                    <div class="score-label" id="scoreLabel">Good</div>
+                </div>
+            </div>
+            
+            <div class="contributing-factors">
+                <h4>Top Contributing Factors</h4>
+                <div class="factors-grid">
+                    <div class="factor-item">
+                        <div class="factor-percentage" id="utilizationPercent">24%</div>
+                        <div class="factor-label">Credit Card Utilization</div>
+                    </div>
+                    <div class="factor-item">
+                        <div class="factor-percentage" id="paymentPercent">99%</div>
+                        <div class="factor-label">Payment History</div>
+                    </div>
+                    <div class="factor-item">
+                        <div class="factor-years" id="historyYears">6 years</div>
+                        <div class="factor-months" id="historyMonths">7 months</div>
+                        <div class="factor-label">Credit History Length</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="explanation-section">
+                <h4>Explanation</h4>
+                <p id="explanationText"></p>
+            </div>
+            
+            <div class="action-buttons">
+                <button id="newSearchBtn" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Tra cứu mới
+                </button>
+                <button id="viewHistoryBtn" class="btn btn-secondary">
+                    <i class="fas fa-history"></i> Lịch sử tra cứu
+                </button>
+                <button id="getTipsBtn" class="btn btn-success">
+                    <i class="fas fa-lightbulb"></i> Tips cải thiện
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Tips -->
+<div id="tipsModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Tips cải thiện điểm tín dụng</h3>
+            <span class="close" id="closeTipsModal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <ul id="tipsList"></ul>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for History -->
+<div id="historyModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Lịch sử tra cứu</h3>
+            <span class="close" id="closeHistoryModal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div id="historyList"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

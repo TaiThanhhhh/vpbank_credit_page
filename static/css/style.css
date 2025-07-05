@@ -1,0 +1,413 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Arial", sans-serif;
+  background: linear-gradient(
+    135deg,
+    #2e7d32 0%,
+    #0288d1 100%
+  ); /* Gradient xanh lá và xanh dương */
+  min-height: 100vh;
+  color: #333;
+}
+
+.navbar {
+  background: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 1rem 0;
+}
+
+.nav-container {
+  max-width: 1200px;
+  display: flex;
+  align-items: center;
+  padding: 0 2rem;
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #d32f2f; /* Màu đỏ cho logo */
+}
+
+.nav-logo img {
+  width: 130px;
+  height: auto;
+  margin-right: 0.5rem;
+}
+
+.main-content {
+  flex: 1;
+  padding: 2rem 0;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.credit-lookup-card {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.card-title {
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #d32f2f; /* Màu đỏ cho tiêu đề */
+  margin-bottom: 2rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.credit-form {
+  display: grid;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  color: #555;
+}
+
+.form-group input {
+  padding: 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #0288d1; /* Màu xanh dương khi focus */
+}
+
+.search-btn {
+  background: #d32f2f; /* Màu đỏ cho nút tra cứu */
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.search-btn:hover {
+  background: #b71c1c; /* Màu đỏ đậm hơn khi hover */
+}
+
+.loading-spinner {
+  text-align: center;
+  padding: 2rem;
+}
+
+.loading-spinner i {
+  font-size: 2rem;
+  color: #0288d1; /* Màu xanh dương cho spinner */
+  margin-bottom: 1rem;
+}
+
+.error-message {
+  background: #ffebee;
+  color: #b71c1c; /* Màu đỏ đậm cho lỗi */
+  padding: 1rem;
+  border-radius: 10px;
+  border-left: 4px solid #b71c1c;
+  margin: 1rem 0;
+}
+
+.credit-result {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.score-display {
+  text-align: center;
+  margin: 2rem 0;
+}
+
+.score-circle {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: conic-gradient(
+    #2e7d32 0deg 240deg,
+    #e0e0e0 240deg 360deg
+  ); /* Gradient xanh lá */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  position: relative;
+}
+
+.score-circle::before {
+  content: "";
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: white;
+}
+
+.score-number {
+  font-size: 3rem;
+  font-weight: bold;
+  color: #d32f2f; /* Màu đỏ cho số điểm */
+  z-index: 1;
+}
+
+.score-label {
+  font-size: 1rem;
+  color: #666;
+  z-index: 1;
+}
+
+.contributing-factors h4 {
+  margin-bottom: 1rem;
+  color: #d32f2f; /* Màu đỏ cho tiêu đề yếu tố */
+}
+
+.factors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.factor-item {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 10px;
+  text-align: center;
+  border: 2px solid #e0e0e0;
+}
+
+.factor-percentage {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #2e7d32; /* Màu xanh lá cho phần trăm */
+  margin-bottom: 0.5rem;
+}
+
+.factor-years {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #2e7d32; /* Màu xanh lá cho năm */
+}
+
+.factor-months {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #666;
+}
+
+.factor-label {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 0.5rem;
+}
+
+.explanation-section {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 10px;
+  margin: 2rem 0;
+}
+
+.explanation-section h4 {
+  margin-bottom: 1rem;
+  color: #d32f2f; /* Màu đỏ cho tiêu đề giải thích */
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  background: #d32f2f; /* Màu đỏ cho nút chính */
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #b71c1c; /* Màu đỏ đậm hơn khi hover */
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #545b62;
+}
+
+.btn-success {
+  background: #2e7d32; /* Màu xanh lá cho nút thành công */
+  color: white;
+}
+
+.btn-success:hover {
+  background: #1b5e20; /* Màu xanh lá đậm hơn khi hover */
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 15px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  color: #d32f2f; /* Màu đỏ cho tiêu đề modal */
+  margin: 0;
+}
+
+.close {
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #666;
+}
+
+.close:hover {
+  color: #000;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+#tipsList {
+  list-style: none;
+  padding: 0;
+}
+
+#tipsList li {
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #2e7d32; /* Màu xanh lá cho tips */
+}
+
+.history-item {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #0288d1; /* Màu xanh dương cho lịch sử */
+}
+
+.history-item .date {
+  font-weight: bold;
+  color: #0288d1; /* Màu xanh dương cho ngày */
+}
+
+.history-item .score {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.footer {
+  background: white;
+  padding: 1rem 0;
+  text-align: center;
+  margin-top: 2rem;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 1rem;
+  }
+
+  .credit-lookup-card {
+    padding: 1.5rem;
+  }
+
+  .factors-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .btn {
+    justify-content: center;
+  }
+}
