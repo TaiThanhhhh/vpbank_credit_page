@@ -172,22 +172,64 @@ def generate_explanation(user_data):
 @app.route('/api/history', methods=['GET'])
 def get_credit_history():
     """API lấy lịch sử tra cứu (giả lập)"""
-    # Giả lập dữ liệu lịch sử
+    # Giả lập dữ liệu lịch sử với định dạng dựa trên hình ảnh
     history = [
         {
-            'date': '05/07/2025 10:30:00',
-            'score': 735,
-            'action': 'Tra cứu điểm tín dụng'
+            'customer_info': {
+                'name': 'John Smith',
+                'date_of_birth': '1876-0423',
+                'occupation': 'Teacher',
+                'average_monthly_income': '$5,000',
+                'credit_history': '1 active loan (mortgage)'
+            },
+            'credit_score_explanation': {
+                'credit_score': 730,
+                'explanation': 'Low risk',
+                'top_contributing_factors': [
+                    'High income',
+                    'Moderate social media use and high income, with moderate social media activity'
+                ],
+                'usage_level': 'Moderate use'
+            },
+            'lookup_time': '05/07/2025 10:30:00'
         },
         {
-            'date': '01/06/2025 14:20:00',
-            'score': 732,
-            'action': 'Tra cứu điểm tín dụng'
+            'customer_info': {
+                'name': 'Nguyen Van A',
+                'date_of_birth': '1980-0501',
+                'occupation': 'Engineer',
+                'average_monthly_income': '$4,500',
+                'credit_history': '2 active cards'
+            },
+            'credit_score_explanation': {
+                'credit_score': 680,
+                'explanation': 'Fair',
+                'top_contributing_factors': [
+                    'Good payment history',
+                    'Moderate credit utilization'
+                ],
+                'usage_level': 'Moderate use'
+            },
+            'lookup_time': '01/06/2025 14:20:00'
         },
         {
-            'date': '15/05/2025 09:45:00',
-            'score': 728,
-            'action': 'Tra cứu điểm tín dụng'
+            'customer_info': {
+                'name': 'Tran Thi B',
+                'date_of_birth': '1990-0715',
+                'occupation': 'Accountant',
+                'average_monthly_income': '$6,000',
+                'credit_history': '1 active loan'
+            },
+            'credit_score_explanation': {
+                'credit_score': 820,
+                'explanation': 'Excellent',
+                'top_contributing_factors': [
+                    'Excellent payment history',
+                    'Long credit history'
+                ],
+                'usage_level': 'Low use'
+            },
+            'lookup_time': '15/05/2025 09:45:00'
         }
     ]
     
