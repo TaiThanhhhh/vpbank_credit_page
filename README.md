@@ -63,8 +63,25 @@ API ENDPOINTS:
 - GET /api/tips - Lấy tips cải thiện điểm tín dụng
 
 DỮ LIỆU MẪU:
-- CMND: 001234567890, Tên: NGUYEN VAN A
-- CMND: 001234567891, Tên: TRAN THI B  
-- CMND: 001234567892, Tên: LE VAN C
+Tên: Huynh Quoc G
+CCCD: 640602618404
+Tên: Hoang Bao A
+CCCD: 880997244659
+Tên: Phan Hong B
+CCCD: 008846790847
+Tên: Vo Anh J
+CCCD: 061458585968
+Tên: Dang Bao C
+CCCD: 668649444847
+Tên: Tran Van H
+CCCD: 600852358063
+Tên: Vo Hong H
+CCCD: 629277046950
+Tên: Phan Dinh I
+CCCD: 139425203922
+Tên: Nguyen Bao J
+CCCD: 998991272339
+Tên: Pham Anh I
+CCCD: 827911066063
 
-Các CMND khác sẽ tự động generate dữ liệu ngẫu nhiên.
+Các CMND khác báo lỗi do không nằm trong bộ dữ liệu
