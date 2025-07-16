@@ -615,3 +615,6 @@ body {
   margin-bottom: 8px;
 }
 
+#clearHistoryBtn:hover {
+  background-color: #c82333; /* Màu đỏ tối hơn */
+}

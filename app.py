@@ -8,6 +8,7 @@ import boto3
 import requests
 import random
 import re
+import os
 from datetime import datetime
 
 app = Flask(__name__)
@@ -18,6 +19,9 @@ s3_client = boto3.client('s3')
 bedrock_client = boto3.client('bedrock-runtime', region_name='us-east-1')  # Thay region nếu cần
 BUCKET_NAME = 'credit-scoring-data-vpbank'  # Thay bằng bucket name thực
 DATA_FILE_KEY = 'individual_input.json'  # Thay bằng key file JSON trên S3
+
+# Đường dẫn file lưu lịch sử
+HISTORY_FILE = 'history.txt'
 
 # Sample data for demonstration
 SAMPLE_USERS = {
@@ -304,10 +308,44 @@ def validate_national_id(national_id):
         return False
     return True
 
+def save_history(result_data, user_data):
+    history_item = {
+        'customer_info': {
+            'name': result_data['full_name'],
+            'date_of_birth': 'Unknown',
+            'occupation': 'Unknown',
+            'average_monthly_income': f"${user_data.get('monthly_inhand_salary', 'Unknown')}",
+            'credit_history': f"{user_data.get('num_of_loan', 0)} loans, {user_data.get('num_credit_card', 0)} credit cards"
+        },
+        'credit_score_explanation': {
+            'credit_score': result_data['credit_score'],
+            'explanation': result_data['score_level'],
+            'top_contributing_factors': [line.strip('- ') for line in result_data['explanation'].split('\n') if line.strip()],
+            'usage_level': 'Unknown'
+        },
+        'lookup_time': result_data['lookup_time']
+    }
+    with open(HISTORY_FILE, 'a') as f:
+        f.write(json.dumps(history_item) + '\n')
+
+def load_history():
+    if not os.path.exists(HISTORY_FILE):
+        return []
+    with open(HISTORY_FILE, 'r') as f:
+        return [json.loads(line.strip()) for line in f if line.strip()]
+
+def clear_history():
+    if os.path.exists(HISTORY_FILE):
+        os.remove(HISTORY_FILE)
+
 @app.route('/')
 def index():
     return render_template('index.html')
 
+@app.route('/ping', methods=['GET'])
+def ping():
+    return "OK", 200
+    
 @app.route('/api/lookup', methods=['POST'])
 def lookup_credit_score():
     try:
@@ -345,21 +383,23 @@ def lookup_credit_score():
         prediction, fico_score, explanation = explain_credit_score(model_path, user_data)
         print("dadad: ", prediction, fico_score, explanation)
         
-        return jsonify({
-            'success': True,
-            'data': {
-                'full_name': user_data['full_name'],
-                'national_id': user_data['national_id'],
-                'credit_score': fico_score,  # Sử dụng fico_score từ hàm tích hợp
-                'score_level': prediction,  # Sử dụng prediction làm category (Poor/Standard/Good)
-                'credit_card_utilization': user_data['credit_utilization_ratio'],
-                'payment_history': 100 - user_data['num_of_delayed_payment'] * 2,
-                'credit_history_years': user_data['credit_history_year'],
-                'credit_history_months': user_data['credit_history_month'],
-                'explanation': explanation,
-                'lookup_time': datetime.now().strftime('%d/%m/%Y %H:%M:%S')
-            }
-        })
+        result_data = {
+            'full_name': user_data['full_name'],
+            'national_id': user_data['national_id'],
+            'credit_score': fico_score,
+            'score_level': prediction,
+            'credit_card_utilization': user_data['credit_utilization_ratio'],
+            'payment_history': 100 - user_data['num_of_delayed_payment'] * 2,
+            'credit_history_years': user_data['credit_history_year'],
+            'credit_history_months': user_data['credit_history_month'],
+            'explanation': explanation,
+            'lookup_time': datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+        }
+        
+        # Lưu lịch sử
+        save_history(result_data, user_data)
+        
+        return jsonify({'success': True, 'data': result_data})
         
     except Exception as e:
         print(f"Error in lookup_credit_score: {e}")
@@ -367,70 +407,16 @@ def lookup_credit_score():
 
 @app.route('/api/history', methods=['GET'])
 def get_credit_history():
-    """API lấy lịch sử tra cứu (giả lập)"""
-    history = [
-        {
-            'customer_info': {
-                'name': 'John Smith',
-                'date_of_birth': '1876-0423',
-                'occupation': 'Teacher',
-                'average_monthly_income': '$5,000',
-                'credit_history': '1 active loan (mortgage)'
-            },
-            'credit_score_explanation': {
-                'credit_score': 730,
-                'explanation': 'Low risk',
-                'top_contributing_factors': [
-                    'High income',
-                    'Moderate social media use and high income, with moderate social media activity'
-                ],
-                'usage_level': 'Moderate use'
-            },
-            'lookup_time': '05/07/2025 10:30:00'
-        },
-        {
-            'customer_info': {
-                'name': 'Nguyen Van A',
-                'date_of_birth': '1980-0501',
-                'occupation': 'Engineer',
-                'average_monthly_income': '$4,500',
-                'credit_history': '2 active cards'
-            },
-            'credit_score_explanation': {
-                'credit_score': 680,
-                'explanation': 'Fair',
-                'top_contributing_factors': [
-                    'Good payment history',
-                    'Moderate credit utilization'
-                ],
-                'usage_level': 'Moderate use'
-            },
-            'lookup_time': '01/06/2025 14:20:00'
-        },
-        {
-            'customer_info': {
-                'name': 'Tran Thi B',
-                'date_of_birth': '1990-0715',
-                'occupation': 'Accountant',
-                'average_monthly_income': '$6,000',
-                'credit_history': '1 active loan'
-            },
-            'credit_score_explanation': {
-                'credit_score': 820,
-                'explanation': 'Excellent',
-                'top_contributing_factors': [
-                    'Excellent payment history',
-                    'Long credit history'
-                ],
-                'usage_level': 'Low use'
-            },
-            'lookup_time': '15/05/2025 09:45:00'
-        }
-    ]
+    history = load_history()
     return jsonify({
         'success': True,
         'data': history
     })
+
+@app.route('/api/clear_history', methods=['POST'])
+def clear_history_route():
+    clear_history()
+    return jsonify({'success': True})
 
 @app.route('/api/tips', methods=['GET'])
 def get_credit_tips():

@@ -70,6 +70,30 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("historyModal").style.display = "none";
     });
 
+  // Xóa lịch sử
+  document
+    .getElementById("clearHistoryBtn")
+    .addEventListener("click", function () {
+      if (confirm("Bạn có chắc muốn xóa toàn bộ lịch sử tra cứu?")) {
+        fetch("/api/clear_history", {
+          method: "POST",
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              alert("Đã xóa lịch sử thành công!");
+              showHistory(); // Refresh modal
+            } else {
+              alert("Lỗi khi xóa lịch sử.");
+            }
+          })
+          .catch((error) => {
+            console.error("Error clearing history:", error);
+            alert("Lỗi khi xóa lịch sử.");
+          });
+      }
+    });
+
   // Close modal when clicking outside
   window.addEventListener("click", function (event) {
     const tipsModal = document.getElementById("tipsModal");
