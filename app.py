@@ -103,88 +103,54 @@ def load_model(path: str):
         print(f"Error loading model: {e}")
         return None
 
-# Preprocess input (merge từ cả hai file: lọc features và mapping)
-def preprocess_input(input_data: dict, model=None) -> pd.DataFrame:
-    # Danh sách các cột đặc trưng theo thứ tự mô hình mong đợi
-    expected_features = [
-        "age", "annual_income", "monthly_inhand_salary", "num_bank_accounts",
-        "num_credit_card", "interest_rate", "num_of_loan", "delay_from_due_date",
-        "num_of_delayed_payment", "changed_credit_limit", "num_credit_inquiries",
-        "credit_mix", "outstanding_debt", "credit_utilization_ratio",
-        "payment_behaviour", "monthly_balance", "salary_range",
-        "credit_history_year", "credit_history_month", "credit_score_numeric"
-    ]
-    
-    # Nếu có mô hình, lấy thứ tự đặc trưng từ model.feature_names_in_
-    if model and hasattr(model, 'feature_names_in_'):
-        expected_features = list(model.feature_names_in_)
-    
-    # Lọc chỉ các cột cần thiết
-    filtered_data = {k: input_data[k] for k in expected_features if k in input_data}
-    df = pd.DataFrame([filtered_data])
-    
-    # Đảm bảo tất cả các cột trong expected_features đều tồn tại
-    for feature in expected_features:
-        if feature not in df.columns:
-            df[feature] = 0  # Giá trị mặc định nếu thiếu
-
-    # Sắp xếp cột theo thứ tự expected_features
-    df = df[expected_features]
-
-    # Ánh xạ giá trị danh mục (từ main.py)
-    df["credit_mix"] = df["credit_mix"].map({"Good": 1, "Standard": 0, "Bad": -1, 0: 0})
+# Preprocess input (tích hợp từ file đầu tiên)
+def preprocess_input(df):
+    df["credit_mix"] = df["credit_mix"].map({"Good": 1, "Standard": 0, "Bad": -1})
     df["payment_behaviour"] = df["payment_behaviour"].map({
         "High_spent_Small_value_payments": 1,
         "Low_spent_Small_value_payments": 0,
         "High_spent_Large_value_payments": 2,
         "Low_spent_Large_value_payments": -1,
         "High_spent_Medium_value_payments": 3,
-        "Low_spent_Medium_value_payments": -2,
-        0: 0
+        "Low_spent_Medium_value_payments": -2
     })
     df["salary_range"] = df["salary_range"].map({
-        "Very Low": 0, "Low": 1, "Medium": 2, "High": 3, "Very High": 4, 0: 0
+        "Very Low": 0,
+        "Low": 1,
+        "Medium": 2,
+        "High": 3,
+        "Very High": 4
     })
-    
     return df
 
-# Generate SHAP values
-def get_shap_values(model, df):
-    try:
-        explainer = shap.TreeExplainer(model)
-        shap_values = explainer(df)
-        return shap_values
-    except Exception as e:
-        print(f"Error generating SHAP values: {e}")
-        return None
+# Compute SHAP values (tích hợp từ file đầu tiên)
+def compute_shap_values(model, X):
+    explainer = shap.TreeExplainer(model)
+    shap_values = explainer.shap_values(X)
+    return shap_values
 
-# Extract top contributing features (từ main.py, giống nhau)
-def get_top_features(df, shap_values, pred_index, top_n=5):
-    shap_vals = shap_values.values[0, :, pred_index]
-    feature_names = df.columns.tolist()
-    top_indices = np.argsort(np.abs(shap_vals))[::-1][:top_n]
-    return [(feature_names[i], shap_vals[i]) for i in top_indices]
+# Get top features (tích hợp từ file đầu tiên)
+def get_top_features(X, shap_values, top_n=3):
+    if isinstance(shap_values, list):
+        shap_val = shap_values[1][0] if len(shap_values) > 1 else shap_values[0][0]
+    else:
+        shap_val = shap_values[0]
+    mean_abs_shap = np.abs(shap_val)
+    top_indices = np.argsort(mean_abs_shap)[-top_n:][::-1]
 
-# Save SHAP values
-def save_shap_values(shap_values, path):
-    try:
-        shap_dict = shap_values.values[0].tolist()
-        with open(path, "w") as f:
-            json.dump(shap_dict, f)
-        print(f"SHAP values saved to {path}")
-    except Exception as e:
-        print(f"Error saving SHAP values: {e}")
+    top_features = []
+    for i in top_indices:
+        shap_score = mean_abs_shap[i]
+        if isinstance(shap_score, np.ndarray):
+            shap_score = float(shap_score.mean())  # hoặc shap_score[0]
+        top_features.append((X.columns[i], X.iloc[0, i], round(shap_score, 4)))
 
-# Generate prompt (cập nhật từ main.py: bao gồm input_data, format bullet points)
-def generate_prompt(input_data, prediction, top_features):
-    # Format the input features into text
-    feature_text = "\n".join([f"- {key}: {value}" for key, value in input_data.items()])
+    return top_features
 
-    # Format SHAP contributions into text
-    shap_text = "\n".join([
-        f"- {feat}: contributed {'+' if val >= 0 else '-'}{abs(val):.2f} points" 
-        for feat, val in top_features
-    ])
+# Generate prompt (tích hợp từ file đầu tiên)
+def generate_prompt(prediction, shap_features, original_input):
+    shap_text = "\n".join([f"- {name}: value = {val}, impact = {shap_val}" for name, val, shap_val in shap_features])
+    feature_text = "\n".join([f"- {key}: {value}" for key, value in original_input.items()])
 
     prompt = f"""
 * Credit Category: **{prediction}**
@@ -192,10 +158,8 @@ def generate_prompt(input_data, prediction, top_features):
 * Factors affecting this kind of category:
 {shap_text}
 
-
 * Input Information of the Individual:
 {feature_text}
-
 
 **Your task:**
 Explain in simple and clear language why this individual was classified to that category.
@@ -208,61 +172,73 @@ The explanation must:
 - Note: start right away with the explanation, no preamble or introduction.
 - Use bullet points format for clarity. At most 5 bullet points.
 - The format of each bullet point should be:
-  - feature_name: explanation of how it affects the score
-
+- feature_name: explanation of how it affects the score
 """
     return prompt
 
-# Thay ask_ollama bằng gọi Claude Sonnet qua Bedrock
-def ask_claude(prompt):
+# Call Bedrock Claude (tích hợp từ file đầu tiên, sử dụng Claude 3 Sonnet như file đầu)
+def call_bedrock_claude(prompt):
     print("Querying Claude Sonnet via AWS Bedrock...")
     try:
-        # Format cho Bedrock Claude
-        body = json.dumps({
+        body = {
             "anthropic_version": "bedrock-2023-05-31",
-            "max_tokens": 1000,
+            "max_tokens": 500,
+            "temperature": 0.7,
+            "top_p": 0.9,
             "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
+                {"role": "user", "content": prompt}
             ]
-        })
+        }
 
         response = bedrock_client.invoke_model(
-            body=body,
-            modelId="anthropic.claude-3-5-sonnet-20240620-v1:0",  # Model ID cho Claude 3.5 Sonnet
-            accept="application/json",
-            contentType="application/json"
+            modelId="anthropic.claude-3-sonnet-20240229-v1:0",  # Claude 3 Sonnet như file đầu
+            body=json.dumps(body),
+            contentType="application/json",
+            accept="application/json"
         )
 
-        response_body = json.loads(response.get("body").read())
-        return response_body.get("content", [{}])[0].get("text", "")
+        result = json.loads(response['body'].read())
+        return result['content'][0]['text']
     except Exception as e:
         print(f"Error calling Bedrock: {e}")
         return ""
 
-# Explain credit score (thay ask_ollama bằng ask_claude)
+# Explain credit score (tích hợp đầy đủ logic từ hàm explain_credit_score của file đầu tiên)
 def explain_credit_score(model_path, input_data):
     try:
+        # Load model
         model = load_model(model_path)
         if model is None:
             raise Exception("Model could not be loaded")
 
-        df = preprocess_input(input_data, model=model)
+        # Chuẩn hóa key để tránh lỗi 'Full Name' vs 'full_name'
+        normalized_data = {k.strip().lower().replace(" ", "_"): v for k, v in input_data.items()}
+
+        # Tách original_info và input_data
+        original_info = {
+            "full_name": normalized_data.get("full_name"),
+            "national_id": normalized_data.get("national_id")
+        }
+
+        input_features = {k: v for k, v in normalized_data.items() if k not in ["full_name", "national_id"]}
+
+        df = pd.DataFrame([input_features])
+        df = preprocess_input(df)
+
+        # SHAP
+        shap_values = compute_shap_values(model, df)
+        top_features = get_top_features(df, shap_values)
+
+        # Predict class & probability
         prediction = model.predict(df)[0]
+        proba = model.predict_proba(df)[0]
+        fico_score = round(proba[0] * 439.5 + proba[1] * 624.5 + proba[2] * 760)
 
-        shap_values = get_shap_values(model, df)
-        if shap_values is None:
-            raise Exception("SHAP values could not be generated")
+        # Prompt
+        prompt = generate_prompt(prediction, top_features, input_features)
+        explanation = call_bedrock_claude(prompt)
 
-        class_labels = model.classes_
-        pred_index = list(class_labels).index(prediction)
-        top_features = get_top_features(df, shap_values, pred_index)
-        save_shap_values(shap_values, "shap_outputs/shap_values.json")
-        prompt = generate_prompt(input_data, prediction, top_features)
-        explanation = ask_claude(prompt)  # Thay bằng Claude
-        return prediction, explanation
+        return prediction, fico_score, explanation
     except Exception as e:
         print(f"Error in explain_credit_score: {e}")
         random_score = random.randint(300, 850)
@@ -272,7 +248,7 @@ def explain_credit_score(model_path, input_data):
             f"Do hệ thống không thể sử dụng mô hình dự đoán, điểm này được tạo ngẫu nhiên dựa trên thông tin tài chính của bạn. "
             f"Vui lòng kiểm tra lại thông tin hoặc thử lại sau."
         )
-        return str(random_score), explanation
+        return "Unknown", random_score, explanation
 
 def generate_random_credit_data(full_name, national_id):
     """Tạo dữ liệu tín dụng ngẫu nhiên cho user mới"""
@@ -366,27 +342,18 @@ def lookup_credit_score():
         
         # Run prediction
         model_path = "models/credit_score_model.pkl"
-        prediction, explanation = explain_credit_score(model_path, user_data)
-        
-        if prediction is None:
-            return jsonify({'success': False, 'message': 'Lỗi khi dự đoán điểm tín dụng. Vui lòng thử lại.'}), 500
-        
-        # Convert score
-        try:
-            score = int(prediction) if prediction.isdigit() else user_data.get('credit_score_numeric', 0) * 100 + 600
-        except ValueError:
-            score = user_data.get('credit_score_numeric', 0) * 100 + 600
-        score_level = get_credit_score_level(score)
+        prediction, fico_score, explanation = explain_credit_score(model_path, user_data)
+        print("dadad: ", prediction, fico_score, explanation)
         
         return jsonify({
             'success': True,
             'data': {
                 'full_name': user_data['full_name'],
                 'national_id': user_data['national_id'],
-                'credit_score': score,
-                'score_level': score_level,
+                'credit_score': fico_score,  # Sử dụng fico_score từ hàm tích hợp
+                'score_level': prediction,  # Sử dụng prediction làm category (Poor/Standard/Good)
                 'credit_card_utilization': user_data['credit_utilization_ratio'],
-                'payment_history': 100 - user_data['num_of_delayed_payment'] * 2,  # Không dùng get() vì field tồn tại
+                'payment_history': 100 - user_data['num_of_delayed_payment'] * 2,
                 'credit_history_years': user_data['credit_history_year'],
                 'credit_history_months': user_data['credit_history_month'],
                 'explanation': explanation,
