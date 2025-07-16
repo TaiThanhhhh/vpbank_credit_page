@@ -126,8 +126,34 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("historyMonths").textContent =
       data.credit_history_months + " months";
 
-    // Cập nhật giải thích
-    document.getElementById("explanationText").textContent = data.explanation;
+    // Xử lý giải thích từ model
+    const explanationText = document.getElementById("explanationText");
+    explanationText.innerHTML = ""; // Xóa nội dung cũ
+    const explanation = data.explanation.trim();
+
+    // Tách và format giải thích thành danh sách bullet points
+    if (explanation) {
+      const ul = document.createElement("ul");
+      ul.className = "explanation-list";
+
+      // Tách các bullet points bằng regex (bắt đầu bằng • hoặc -)
+      const bulletPoints = explanation
+        .split(/•|-/)
+        .map((item) => item.trim())
+        .filter(
+          (item) => item && !item.startsWith("The individual was classified")
+        );
+
+      bulletPoints.forEach((point) => {
+        const li = document.createElement("li");
+        li.textContent = point;
+        ul.appendChild(li);
+      });
+
+      explanationText.appendChild(ul);
+    } else {
+      explanationText.textContent = "Không có giải thích chi tiết.";
+    }
 
     // Ẩn form và hiển thị kết quả
     creditForm.style.display = "none";
