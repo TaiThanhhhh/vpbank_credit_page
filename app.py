@@ -342,7 +342,7 @@ def clear_history():
 def index():
     return render_template('index.html')
 
-@app.route('/ping', methods=['GET'])
+@app.route('/ping', methods=['GET']) 
 def ping():
     return "OK", 200
     
