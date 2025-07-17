@@ -516,7 +516,8 @@ def enrich_from_internet():
             return jsonify({'success': False, 'message': 'Không thể truy vấn dữ liệu bổ sung.'}), 500
 
         df_to_process = pd.DataFrame(enrich_data)
-        customer = df_to_process[(df_to_process['customer_id'] == national_id) & (df_to_process['full_name'].upper() == full_name)]
+        df_to_process['customer_id'] = df_to_process['customer_id'].astype(str)
+        customer = df_to_process[(df_to_process['customer_id'] == national_id) & (df_to_process['full_name'].str.upper() == full_name.upper())]
 
         if customer.empty:
             return jsonify({'success': False, 'message': 'Không tìm thấy thông tin người dùng để bổ sung.'}), 404

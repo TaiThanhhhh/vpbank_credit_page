@@ -230,99 +230,250 @@ document.addEventListener("DOMContentLoaded", function () {
     modal.style.left = "0";
     modal.style.width = "100%";
     modal.style.height = "100%";
-    modal.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+    modal.style.backgroundColor = "rgba(0, 0, 0, 0.6)";
     modal.style.display = "none";
     modal.style.justifyContent = "center";
     modal.style.alignItems = "center";
     modal.style.zIndex = "1000";
+    modal.style.backdropFilter = "blur(5px)";
 
     const modalContent = document.createElement("div");
-    modalContent.style.backgroundColor = "white";
-    modalContent.style.padding = "30px";
-    modalContent.style.borderRadius = "12px";
-    modalContent.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.2)";
-    modalContent.style.width = "50%";
-    modalContent.style.maxWidth = "600px";
-    modalContent.style.maxHeight = "80%";
+    modalContent.style.backgroundColor = "#ffffff";
+    modalContent.style.padding = "0";
+    modalContent.style.borderRadius = "16px";
+    modalContent.style.boxShadow = "0 20px 60px rgba(0, 0, 0, 0.15)";
+    modalContent.style.width = "90%";
+    modalContent.style.maxWidth = "700px";
+    modalContent.style.maxHeight = "90vh";
     modalContent.style.overflowY = "auto";
-    modalContent.style.fontFamily = "Arial, sans-serif";
+    modalContent.style.fontFamily =
+      "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+    modalContent.style.position = "relative";
+
+    // Header with VPBank colors
+    const header = document.createElement("div");
+    header.style.background =
+      "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)";
+    header.style.padding = "25px 30px";
+    header.style.borderRadius = "16px 16px 0 0";
+    header.style.position = "relative";
+    header.style.overflow = "hidden";
+
+    // VPBank accent pattern
+    const accent = document.createElement("div");
+    accent.style.position = "absolute";
+    accent.style.top = "0";
+    accent.style.right = "0";
+    accent.style.width = "100px";
+    accent.style.height = "100px";
+    accent.style.background = "linear-gradient(45deg, #f39c12, #e67e22)";
+    accent.style.borderRadius = "50%";
+    accent.style.transform = "translate(50%, -50%)";
+    accent.style.opacity = "0.1";
+    header.appendChild(accent);
 
     const title = document.createElement("h2");
-    title.textContent = "Thông tin người dùng sau khi bổ sung";
-    title.style.textAlign = "center";
-    title.style.color = "#333";
-    title.style.marginBottom = "20px";
-    modalContent.appendChild(title);
+    title.textContent = "Enriched User Information";
+    title.style.color = "#ffffff";
+    title.style.margin = "0";
+    title.style.fontSize = "24px";
+    title.style.fontWeight = "600";
+    title.style.textShadow = "0 2px 4px rgba(0, 0, 0, 0.2)";
+    title.style.position = "relative";
+    title.style.zIndex = "1";
+    header.appendChild(title);
 
-    const infoList = document.createElement("ul");
-    infoList.style.listStyleType = "none";
-    infoList.style.padding = "0";
+    modalContent.appendChild(header);
 
-    // Các fields cần hiển thị
+    // Content area
+    const contentArea = document.createElement("div");
+    contentArea.style.padding = "30px";
+    contentArea.style.backgroundColor = "#fafbfc";
+
+    const infoGrid = document.createElement("div");
+    infoGrid.style.display = "grid";
+    infoGrid.style.gridTemplateColumns = "repeat(auto-fit, minmax(300px, 1fr))";
+    infoGrid.style.gap = "20px";
+    infoGrid.style.marginBottom = "30px";
+
+    // Function to format currency
+    function formatCurrency(value) {
+      if (
+        !value ||
+        value === "Không có thông tin" ||
+        value === "No information"
+      ) {
+        return "No information";
+      }
+      // Remove any existing formatting
+      const numericValue = value.toString().replace(/[^\d]/g, "");
+      if (!numericValue || numericValue === "0") {
+        return "No information";
+      }
+      // Format with dots every 3 digits
+      return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " VND";
+    }
+
+    // Function to format links
+    function formatLinks(value) {
+      if (
+        !value ||
+        value === "Không có thông tin" ||
+        value === "No information"
+      ) {
+        return "No information";
+      }
+      // Split by comma and create clickable links
+      const links = value.split(",").map((link) => {
+        const trimmedLink = link.trim();
+        if (trimmedLink.startsWith("http")) {
+          return `<a href="${trimmedLink}" target="_blank" style="color: #1e3c72; text-decoration: none; word-break: break-all;">${trimmedLink}</a>`;
+        }
+        return trimmedLink;
+      });
+      return links.join(", ");
+    }
+
+    // Updated fields in English
     const fields = [
-      { key: "age", label: "Tuổi" },
-      { key: "address", label: "Địa chỉ" },
-      { key: "email_address", label: "Email" },
-      { key: "phone_number", label: "Số điện thoại" },
-      { key: "job_title", label: "Chức vụ" },
-      { key: "current_company", label: "Công ty hiện tại" },
-      { key: "educational_level", label: "Trình độ học vấn" },
-      { key: "occupation", label: "Nghề nghiệp" },
-      { key: "criminal_record", label: "Tiền án" },
-      { key: "stock_assets", label: "Tài sản cổ phiếu" },
-      { key: "source_of_information", label: "Nguồn thông tin" },
-      { key: "confidence_level", label: "Mức độ tin cậy" },
+      { key: "age", label: "Age", type: "text" },
+      { key: "address", label: "Address", type: "text" },
+      { key: "email_address", label: "Email Address", type: "text" },
+      { key: "phone_number", label: "Phone Number", type: "text" },
+      { key: "job_title", label: "Job Title", type: "text" },
+      { key: "current_company", label: "Current Company", type: "text" },
+      { key: "educational_level", label: "Education Level", type: "text" },
+      { key: "occupation", label: "Occupation", type: "text" },
+      { key: "criminal_record", label: "Criminal Record", type: "text" },
+      { key: "stock_assets", label: "Stock Assets", type: "currency" },
+      {
+        key: "source_of_information",
+        label: "Information Source",
+        type: "links",
+      },
+      { key: "confidence_level", label: "Confidence Level", type: "text" },
     ];
 
     fields.forEach((field) => {
-      const li = document.createElement("li");
-      li.style.marginBottom = "15px";
-      li.style.borderBottom = "1px solid #eee";
-      li.style.paddingBottom = "10px";
+      const fieldContainer = document.createElement("div");
+      fieldContainer.style.backgroundColor = "#ffffff";
+      fieldContainer.style.padding = "20px";
+      fieldContainer.style.borderRadius = "12px";
+      fieldContainer.style.border = "1px solid #e1e8ed";
+      fieldContainer.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.05)";
+      fieldContainer.style.transition = "all 0.3s ease";
+      fieldContainer.style.position = "relative";
 
-      const label = document.createElement("strong");
-      label.textContent = `${field.label}: `;
-      label.style.color = "#555";
+      // Hover effect
+      fieldContainer.onmouseover = function () {
+        this.style.boxShadow = "0 4px 16px rgba(30, 60, 114, 0.1)";
+        this.style.transform = "translateY(-2px)";
+      };
+      fieldContainer.onmouseout = function () {
+        this.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.05)";
+        this.style.transform = "translateY(0)";
+      };
 
-      const value = document.createElement("span");
-      value.textContent =
-        data[field.key] !== null && data[field.key] !== undefined
-          ? data[field.key]
-          : "Không có thông tin";
-      value.style.color = "#333";
+      // VPBank accent line
+      const accentLine = document.createElement("div");
+      accentLine.style.position = "absolute";
+      accentLine.style.top = "0";
+      accentLine.style.left = "0";
+      accentLine.style.width = "4px";
+      accentLine.style.height = "100%";
+      accentLine.style.background = "linear-gradient(180deg, #1e3c72, #f39c12)";
+      accentLine.style.borderRadius = "0 0 8px 8px";
+      fieldContainer.appendChild(accentLine);
 
-      li.appendChild(label);
-      li.appendChild(value);
-      infoList.appendChild(li);
+      const label = document.createElement("div");
+      label.textContent = field.label;
+      label.style.color = "#1e3c72";
+      label.style.fontSize = "14px";
+      label.style.fontWeight = "600";
+      label.style.marginBottom = "8px";
+      label.style.textTransform = "uppercase";
+      label.style.letterSpacing = "0.5px";
+
+      const value = document.createElement("div");
+      let displayValue;
+
+      if (
+        data[field.key] !== null &&
+        data[field.key] !== undefined &&
+        data[field.key] !== "Không có thông tin"
+      ) {
+        switch (field.type) {
+          case "currency":
+            displayValue = formatCurrency(data[field.key]);
+            break;
+          case "links":
+            displayValue = formatLinks(data[field.key]);
+            break;
+          default:
+            displayValue = data[field.key];
+        }
+      } else {
+        displayValue = "No information";
+      }
+
+      if (field.type === "links") {
+        value.innerHTML = displayValue;
+      } else {
+        value.textContent = displayValue;
+      }
+
+      value.style.color = "#2c3e50";
+      value.style.fontSize = "16px";
+      value.style.fontWeight = "500";
+      value.style.lineHeight = "1.4";
+      value.style.wordBreak = "break-word";
+
+      fieldContainer.appendChild(label);
+      fieldContainer.appendChild(value);
+      infoGrid.appendChild(fieldContainer);
     });
 
-    modalContent.appendChild(infoList);
+    contentArea.appendChild(infoGrid);
 
-    // Nút tiếp tục và đóng
+    // Button container
     const buttonContainer = document.createElement("div");
     buttonContainer.style.display = "flex";
-    buttonContainer.style.justifyContent = "space-between";
-    buttonContainer.style.marginTop = "30px";
+    buttonContainer.style.gap = "15px";
+    buttonContainer.style.justifyContent = "center";
+    buttonContainer.style.paddingTop = "20px";
+    buttonContainer.style.borderTop = "1px solid #e1e8ed";
 
+    // Continue button
     const continueBtn = document.createElement("button");
-    continueBtn.textContent = "Tiếp tục tính điểm tín dụng";
-    continueBtn.style.backgroundColor = "#007bff";
+    continueBtn.textContent = "Continue Credit Scoring";
+    continueBtn.style.background =
+      "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)";
     continueBtn.style.color = "white";
-    continueBtn.style.padding = "12px 24px";
+    continueBtn.style.padding = "14px 28px";
     continueBtn.style.border = "none";
-    continueBtn.style.borderRadius = "8px";
+    continueBtn.style.borderRadius = "10px";
     continueBtn.style.cursor = "pointer";
-    continueBtn.style.transition = "background-color 0.3s";
+    continueBtn.style.fontSize = "16px";
+    continueBtn.style.fontWeight = "600";
+    continueBtn.style.transition = "all 0.3s ease";
+    continueBtn.style.boxShadow = "0 4px 12px rgba(30, 60, 114, 0.3)";
+    continueBtn.style.textTransform = "uppercase";
+    continueBtn.style.letterSpacing = "0.5px";
+    continueBtn.style.minWidth = "200px";
+
     continueBtn.onmouseover = function () {
-      this.style.backgroundColor = "#0056b3";
+      this.style.transform = "translateY(-2px)";
+      this.style.boxShadow = "0 6px 20px rgba(30, 60, 114, 0.4)";
     };
     continueBtn.onmouseout = function () {
-      this.style.backgroundColor = "#007bff";
+      this.style.transform = "translateY(0)";
+      this.style.boxShadow = "0 4px 12px rgba(30, 60, 114, 0.3)";
     };
+
     continueBtn.addEventListener("click", function () {
       modal.style.display = "none";
       document.body.removeChild(modal);
-      // Gọi lại lookup để tính score
+      // Continue with credit scoring
       fetch("/api/lookup", {
         method: "POST",
         headers: {
@@ -341,39 +492,52 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .catch((error) => {
           hideLoading();
-          showError("Lỗi khi tra cứu sau khi bổ sung dữ liệu.");
+          showError("Error during credit scoring lookup.");
           console.error("Error:", error);
         });
     });
 
+    // Close button
     const closeBtn = document.createElement("button");
-    closeBtn.textContent = "Đóng";
-    closeBtn.style.backgroundColor = "#6c757d";
+    closeBtn.textContent = "Close";
+    closeBtn.style.background =
+      "linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)";
     closeBtn.style.color = "white";
-    closeBtn.style.padding = "12px 24px";
+    closeBtn.style.padding = "14px 28px";
     closeBtn.style.border = "none";
-    closeBtn.style.borderRadius = "8px";
+    closeBtn.style.borderRadius = "10px";
     closeBtn.style.cursor = "pointer";
-    closeBtn.style.transition = "background-color 0.3s";
+    closeBtn.style.fontSize = "16px";
+    closeBtn.style.fontWeight = "600";
+    closeBtn.style.transition = "all 0.3s ease";
+    closeBtn.style.boxShadow = "0 4px 12px rgba(149, 165, 166, 0.3)";
+    closeBtn.style.textTransform = "uppercase";
+    closeBtn.style.letterSpacing = "0.5px";
+    closeBtn.style.minWidth = "120px";
+
     closeBtn.onmouseover = function () {
-      this.style.backgroundColor = "#5a6268";
+      this.style.transform = "translateY(-2px)";
+      this.style.boxShadow = "0 6px 20px rgba(149, 165, 166, 0.4)";
     };
     closeBtn.onmouseout = function () {
-      this.style.backgroundColor = "#6c757d";
+      this.style.transform = "translateY(0)";
+      this.style.boxShadow = "0 4px 12px rgba(149, 165, 166, 0.3)";
     };
+
     closeBtn.addEventListener("click", function () {
       modal.style.display = "none";
       document.body.removeChild(modal);
-      hideLoading(); // Ẩn loading nếu đóng modal
+      hideLoading();
     });
 
     buttonContainer.appendChild(continueBtn);
     buttonContainer.appendChild(closeBtn);
-    modalContent.appendChild(buttonContainer);
+    contentArea.appendChild(buttonContainer);
 
+    modalContent.appendChild(contentArea);
     modal.appendChild(modalContent);
 
-    // Đóng modal khi click ngoài
+    // Close modal when clicking outside
     modal.addEventListener("click", function (event) {
       if (event.target === modal) {
         modal.style.display = "none";
@@ -381,6 +545,40 @@ document.addEventListener("DOMContentLoaded", function () {
         hideLoading();
       }
     });
+
+    // Responsive design
+    const mediaQuery = window.matchMedia("(max-width: 768px)");
+    function handleResponsive(e) {
+      if (e.matches) {
+        // Mobile styles
+        modalContent.style.width = "95%";
+        modalContent.style.maxHeight = "95vh";
+        contentArea.style.padding = "20px";
+        header.style.padding = "20px";
+        infoGrid.style.gridTemplateColumns = "1fr";
+        infoGrid.style.gap = "15px";
+        buttonContainer.style.flexDirection = "column";
+        buttonContainer.style.gap = "10px";
+        continueBtn.style.minWidth = "100%";
+        closeBtn.style.minWidth = "100%";
+      } else {
+        // Desktop styles
+        modalContent.style.width = "90%";
+        modalContent.style.maxHeight = "90vh";
+        contentArea.style.padding = "30px";
+        header.style.padding = "25px 30px";
+        infoGrid.style.gridTemplateColumns =
+          "repeat(auto-fit, minmax(300px, 1fr))";
+        infoGrid.style.gap = "20px";
+        buttonContainer.style.flexDirection = "row";
+        buttonContainer.style.gap = "15px";
+        continueBtn.style.minWidth = "200px";
+        closeBtn.style.minWidth = "120px";
+      }
+    }
+
+    mediaQuery.addListener(handleResponsive);
+    handleResponsive(mediaQuery);
 
     return modal;
   }
