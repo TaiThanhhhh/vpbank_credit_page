@@ -3,13 +3,14 @@ document.addEventListener("DOMContentLoaded", function () {
   const loadingSpinner = document.getElementById("loadingSpinner");
   const errorMessage = document.getElementById("errorMessage");
   const creditResult = document.getElementById("creditResult");
+  let currentData = {}; // Biến để lưu dữ liệu form hiện tại
 
   // Form submission
   creditForm.addEventListener("submit", function (e) {
     e.preventDefault();
 
     const formData = new FormData(creditForm);
-    const data = {
+    currentData = {
       full_name: formData.get("full_name"),
       national_id: formData.get("national_id"),
     };
@@ -23,7 +24,7 @@ document.addEventListener("DOMContentLoaded", function () {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify(currentData),
     })
       .then((response) => response.json())
       .then((data) => {
@@ -121,6 +122,267 @@ document.addEventListener("DOMContentLoaded", function () {
     errorMessage.textContent = message;
     errorMessage.style.display = "block";
     creditResult.style.display = "none";
+
+    // Xóa các nút cũ nếu có
+    const existingBtns = errorMessage.querySelectorAll("button");
+    existingBtns.forEach((btn) => btn.remove());
+
+    // Nếu lỗi là không tìm thấy trong individual_input.json (và có thể enrich_data), hiển thị 2 nút
+    if (message.includes("Không tìm thấy thông tin người dùng")) {
+      const btnContainer = document.createElement("div");
+      btnContainer.style.display = "flex";
+      btnContainer.style.justifyContent = "center";
+      btnContainer.style.marginTop = "20px";
+
+      const btnInternet = document.createElement("button");
+      btnInternet.textContent = "Enrich from Internet";
+      btnInternet.style.backgroundColor = "#007bff"; // Màu xanh dương
+      btnInternet.style.color = "white";
+      btnInternet.style.padding = "12px 24px";
+      btnInternet.style.border = "none";
+      btnInternet.style.borderRadius = "8px";
+      btnInternet.style.fontSize = "16px";
+      btnInternet.style.cursor = "pointer";
+      btnInternet.style.margin = "0 10px";
+      btnInternet.style.transition = "background-color 0.3s";
+      btnInternet.onmouseover = function () {
+        this.style.backgroundColor = "#0056b3";
+      };
+      btnInternet.onmouseout = function () {
+        this.style.backgroundColor = "#007bff";
+      };
+
+      const btnFile = document.createElement("button");
+      btnFile.textContent = "Enrich from File";
+      btnFile.style.backgroundColor = "#28a745"; // Màu xanh lá
+      btnFile.style.color = "white";
+      btnFile.style.padding = "12px 24px";
+      btnFile.style.border = "none";
+      btnFile.style.borderRadius = "8px";
+      btnFile.style.fontSize = "16px";
+      btnFile.style.cursor = "pointer";
+      btnFile.style.margin = "0 10px";
+      btnFile.style.transition = "background-color 0.3s";
+      btnFile.onmouseover = function () {
+        this.style.backgroundColor = "#218838";
+      };
+      btnFile.onmouseout = function () {
+        this.style.backgroundColor = "#28a745";
+      };
+
+      errorMessage.appendChild(document.createElement("br"));
+      btnContainer.appendChild(btnInternet);
+      btnContainer.appendChild(btnFile);
+      errorMessage.appendChild(btnContainer);
+
+      // Event listeners cho nút
+      btnInternet.addEventListener("click", function () {
+        enrichData("internet");
+      });
+
+      btnFile.addEventListener("click", function () {
+        enrichData("file");
+      });
+    }
+  }
+
+  // Hàm xử lý enrich và gọi lại lookup
+  function enrichData(type) {
+    showLoading();
+    const endpoint =
+      type === "internet"
+        ? "/api/enrich_from_internet"
+        : "/api/enrich_from_file";
+
+    fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(currentData),
+    })
+      .then((response) => response.json())
+      .then((enrichResponse) => {
+        if (enrichResponse.success) {
+          // Tạo và hiển thị modal thông tin enrich
+          const modal = createEnrichModal(enrichResponse.data);
+          document.body.appendChild(modal);
+          modal.style.display = "flex";
+
+          // Không gọi lookup ngay, chờ user nhấn nút tiếp tục
+        } else {
+          hideLoading();
+          showError(enrichResponse.message);
+        }
+      })
+      .catch((error) => {
+        hideLoading();
+        showError("Đã xảy ra lỗi khi bổ sung dữ liệu. Vui lòng thử lại.");
+        console.error("Error:", error);
+      });
+  }
+
+  // Hàm tạo modal hiển thị thông tin enrich đẹp
+  function createEnrichModal(data) {
+    const modal = document.createElement("div");
+    modal.style.position = "fixed";
+    modal.style.top = "0";
+    modal.style.left = "0";
+    modal.style.width = "100%";
+    modal.style.height = "100%";
+    modal.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
+    modal.style.display = "none";
+    modal.style.justifyContent = "center";
+    modal.style.alignItems = "center";
+    modal.style.zIndex = "1000";
+
+    const modalContent = document.createElement("div");
+    modalContent.style.backgroundColor = "white";
+    modalContent.style.padding = "30px";
+    modalContent.style.borderRadius = "12px";
+    modalContent.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.2)";
+    modalContent.style.width = "50%";
+    modalContent.style.maxWidth = "600px";
+    modalContent.style.maxHeight = "80%";
+    modalContent.style.overflowY = "auto";
+    modalContent.style.fontFamily = "Arial, sans-serif";
+
+    const title = document.createElement("h2");
+    title.textContent = "Thông tin người dùng sau khi bổ sung";
+    title.style.textAlign = "center";
+    title.style.color = "#333";
+    title.style.marginBottom = "20px";
+    modalContent.appendChild(title);
+
+    const infoList = document.createElement("ul");
+    infoList.style.listStyleType = "none";
+    infoList.style.padding = "0";
+
+    // Các fields cần hiển thị
+    const fields = [
+      { key: "age", label: "Tuổi" },
+      { key: "address", label: "Địa chỉ" },
+      { key: "email_address", label: "Email" },
+      { key: "phone_number", label: "Số điện thoại" },
+      { key: "job_title", label: "Chức vụ" },
+      { key: "current_company", label: "Công ty hiện tại" },
+      { key: "educational_level", label: "Trình độ học vấn" },
+      { key: "occupation", label: "Nghề nghiệp" },
+      { key: "criminal_record", label: "Tiền án" },
+      { key: "stock_assets", label: "Tài sản cổ phiếu" },
+      { key: "source_of_information", label: "Nguồn thông tin" },
+      { key: "confidence_level", label: "Mức độ tin cậy" },
+    ];
+
+    fields.forEach((field) => {
+      const li = document.createElement("li");
+      li.style.marginBottom = "15px";
+      li.style.borderBottom = "1px solid #eee";
+      li.style.paddingBottom = "10px";
+
+      const label = document.createElement("strong");
+      label.textContent = `${field.label}: `;
+      label.style.color = "#555";
+
+      const value = document.createElement("span");
+      value.textContent =
+        data[field.key] !== null && data[field.key] !== undefined
+          ? data[field.key]
+          : "Không có thông tin";
+      value.style.color = "#333";
+
+      li.appendChild(label);
+      li.appendChild(value);
+      infoList.appendChild(li);
+    });
+
+    modalContent.appendChild(infoList);
+
+    // Nút tiếp tục và đóng
+    const buttonContainer = document.createElement("div");
+    buttonContainer.style.display = "flex";
+    buttonContainer.style.justifyContent = "space-between";
+    buttonContainer.style.marginTop = "30px";
+
+    const continueBtn = document.createElement("button");
+    continueBtn.textContent = "Tiếp tục tính điểm tín dụng";
+    continueBtn.style.backgroundColor = "#007bff";
+    continueBtn.style.color = "white";
+    continueBtn.style.padding = "12px 24px";
+    continueBtn.style.border = "none";
+    continueBtn.style.borderRadius = "8px";
+    continueBtn.style.cursor = "pointer";
+    continueBtn.style.transition = "background-color 0.3s";
+    continueBtn.onmouseover = function () {
+      this.style.backgroundColor = "#0056b3";
+    };
+    continueBtn.onmouseout = function () {
+      this.style.backgroundColor = "#007bff";
+    };
+    continueBtn.addEventListener("click", function () {
+      modal.style.display = "none";
+      document.body.removeChild(modal);
+      // Gọi lại lookup để tính score
+      fetch("/api/lookup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(currentData),
+      })
+        .then((response) => response.json())
+        .then((lookupData) => {
+          hideLoading();
+          if (lookupData.success) {
+            displayCreditResult(lookupData.data);
+          } else {
+            showError(lookupData.message);
+          }
+        })
+        .catch((error) => {
+          hideLoading();
+          showError("Lỗi khi tra cứu sau khi bổ sung dữ liệu.");
+          console.error("Error:", error);
+        });
+    });
+
+    const closeBtn = document.createElement("button");
+    closeBtn.textContent = "Đóng";
+    closeBtn.style.backgroundColor = "#6c757d";
+    closeBtn.style.color = "white";
+    closeBtn.style.padding = "12px 24px";
+    closeBtn.style.border = "none";
+    closeBtn.style.borderRadius = "8px";
+    closeBtn.style.cursor = "pointer";
+    closeBtn.style.transition = "background-color 0.3s";
+    closeBtn.onmouseover = function () {
+      this.style.backgroundColor = "#5a6268";
+    };
+    closeBtn.onmouseout = function () {
+      this.style.backgroundColor = "#6c757d";
+    };
+    closeBtn.addEventListener("click", function () {
+      modal.style.display = "none";
+      document.body.removeChild(modal);
+      hideLoading(); // Ẩn loading nếu đóng modal
+    });
+
+    buttonContainer.appendChild(continueBtn);
+    buttonContainer.appendChild(closeBtn);
+    modalContent.appendChild(buttonContainer);
+
+    modal.appendChild(modalContent);
+
+    // Đóng modal khi click ngoài
+    modal.addEventListener("click", function (event) {
+      if (event.target === modal) {
+        modal.style.display = "none";
+        document.body.removeChild(modal);
+        hideLoading();
+      }
+    });
+
+    return modal;
   }
 
   function displayCreditResult(data) {
