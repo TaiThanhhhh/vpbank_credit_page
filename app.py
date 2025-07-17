@@ -422,12 +422,12 @@ def clear_history_route():
 def get_credit_tips():
     """API lấy tips cải thiện điểm tín dụng"""
     tips = [
-        "Thanh toán hóa đơn đúng hạn để duy trì lịch sử thanh toán tốt",
-        "Giữ mức sử dụng thẻ tín dụng dưới 30% so với hạn mức",
-        "Không đóng các tài khoản tín dụng cũ để duy trì lịch sử tín dụng dài",
-        "Kiểm tra báo cáo tín dụng định kỳ để phát hiện sai sót",
-        "Đa dạng hóa các loại tín dụng (thẻ tín dụng, vay ngân hàng, etc.)",
-        "Tránh mở quá nhiều tài khoản tín dụng mới trong thời gian ngắn"
+        "Pay bills on time to maintain a good payment history",
+        "Keep credit card usage below 30% of the credit limit",
+        "Do not close old credit accounts to maintain a long credit history",
+        "Check your credit report regularly to detect errors",
+        "Diversify types of credit (credit cards, bank loans, etc.)",
+        "Avoid opening too many new credit accounts in a short period"
     ]
     return jsonify({
         'success': True,

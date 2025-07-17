@@ -84,13 +84,13 @@
 
       <div class="action-buttons">
         <button id="newSearchBtn" class="btn btn-primary">
-          <i class="fas fa-search"></i> Tra cứu mới
+          <i class="fas fa-search"></i> New Search
         </button>
         <button id="viewHistoryBtn" class="btn btn-secondary">
-          <i class="fas fa-history"></i> Lịch sử tra cứu
+          <i class="fas fa-history"></i> Search History
         </button>
         <button id="getTipsBtn" class="btn btn-success">
-          <i class="fas fa-lightbulb"></i> Tips cải thiện
+          <i class="fas fa-lightbulb"></i> Improvement Tips
         </button>
       </div>
     </div>
@@ -115,11 +115,31 @@
   <div class="modal-content">
     <div class="modal-header">
       <h3>Lịch sử tra cứu</h3>
-      <button class="close" id="closeHistoryModal" onclick="closeHistoryModal()">×</button>
+      <button
+        class="close"
+        id="closeHistoryModal"
+        onclick="closeHistoryModal()"
+      >
+        ×
+      </button>
     </div>
     <div class="modal-body">
       <div id="historyList"></div>
-      <button id="clearHistoryBtn" style="margin-top: 15px; padding: 10px 20px; background-color: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">Xóa toàn bộ lịch sử</button>
+      <button
+        id="clearHistoryBtn"
+        style="
+          margin-top: 15px;
+          padding: 10px 20px;
+          background-color: #dc3545;
+          color: white;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+          font-weight: bold;
+        "
+      >
+        Xóa toàn bộ lịch sử
+      </button>
     </div>
   </div>
 </div>
