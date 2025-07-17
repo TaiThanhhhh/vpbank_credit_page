@@ -16,7 +16,9 @@ app = Flask(__name__)
 app.secret_key = 'vpbank-credit-lookup-secret'
 
 # Khởi tạo client S3 và Bedrock
-s3_client = boto3.client('s3')
+s3_client = boto3.client('s3', 
+                     
+                         region_name = 'us-east-1') 
 bedrock_client = boto3.client('bedrock-runtime', region_name='us-east-1')  # Thay region nếu cần
 BUCKET_NAME = 'credit-scoring-data-vpbank'  # Thay bằng bucket name thực
 DATA_FILE_KEY = 'data_to_enrich.json'  # Thay bằng key file JSON trên S3
@@ -178,9 +180,13 @@ def lookup_credit_score():
         
         # Tìm user khớp cus_id và full_name
         df_to_process = pd.DataFrame(users_data)
-        customer = df_to_process[(df_to_process['customer_id'] == cus_id) & (df_to_process['full_name'].upper() == full_name.upper())]
+        df_to_process['customer_id'] = df_to_process['customer_id'].astype(str)
 
-        if not customer:
+
+        customer = df_to_process[(df_to_process['customer_id'] == "1001") & (df_to_process['full_name'].str.upper() == full_name.upper())]
+        print("customer: ", customer)
+
+        if customer.shape[0] == 0:
             return jsonify({'success': False, 'message': 'Không tìm thấy thông tin người dùng. Vui lòng kiểm tra lại họ tên và số customer id.'}), 404
         
         # Run prediction
@@ -229,4 +235,4 @@ def get_credit_tips():
     })
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5001)
