@@ -320,22 +320,29 @@ def explain_credit_score(model_path, input_data):
         df = preprocess_input(df)
         shap_values = compute_shap_values(model, df)
         top_features = get_top_features(df, shap_values)
-        prediction = model.predict(df)[0]
+        
+        # Tính fico_score từ proba của model
         proba = model.predict_proba(df)[0]
         fico_score = round(proba[0] * 439.5 + proba[1] * 624.5 + proba[2] * 760)
-        prompt = generate_prompt(prediction, top_features, input_features)
+        
+        # Tính score_level thủ công từ fico_score qua hàm get_credit_score_level
+        score_level = get_credit_score_level(fico_score)
+        
+        # Cập nhật prompt dùng score_level
+        prompt = generate_prompt(score_level, top_features, input_features)
         explanation = call_bedrock_claude(prompt)
-        return prediction, fico_score, explanation
+        
+        return score_level, fico_score, explanation
     except Exception as e:
         print(f"Error in explain_credit_score: {e}")
         random_score = random.randint(300, 850)
-        score_level = get_credit_score_level(random_score)
+        score_level = get_credit_score_level(random_score)  # Tính tay ngay cả khi lỗi
         explanation = (
             f"Điểm tín dụng của bạn được ước tính là {random_score} ({score_level}). "
             f"Do hệ thống không thể sử dụng mô hình dự đoán, điểm này được tạo ngẫu nhiên dựa trên thông tin tài chính của bạn. "
             f"Vui lòng kiểm tra lại thông tin hoặc thử lại sau."
         )
-        return "Unknown", random_score, explanation
+        return score_level, random_score, explanation
 
 def generate_random_credit_data(full_name, national_id):
     return {
@@ -466,13 +473,13 @@ def lookup_credit_score():
             return jsonify({'success': False, 'message': 'Không tìm thấy thông tin người dùng. Vui lòng kiểm tra lại họ tên và số CMND/CCCD.'}), 404
 
         model_path = "models/credit_score_model.pkl"
-        prediction, fico_score, explanation = explain_credit_score(model_path, user_data)
+        score_level, fico_score, explanation = explain_credit_score(model_path, user_data)
 
         result_data = {
             'full_name': user_data['full_name'],
             'national_id': user_data['national_id'],
             'credit_score': fico_score,
-            'score_level': prediction,
+            'score_level': score_level,  # Bây giờ là từ get_credit_score_level, không từ model prediction
             'credit_card_utilization': user_data.get('credit_utilization_ratio', 0),
             'payment_history': 100 - user_data.get('num_of_delayed_payment', 0) * 2,
             'credit_history_years': user_data.get('credit_history_year', 0),
