@@ -95,7 +95,7 @@ vpbank_credit_app/
 python app.py
 ```
 
-### 7. Truy cập demo ở: [Link]{https://vpbank-credit-page.onrender.com/}
+### 7. Truy cập demo ở: [Link](https://vpbank-credit-page.onrender.com/)
 
 ## 🧑‍💻 Tính Năng Chính:
 - Tra cứu điểm tín dụng theo CMND/CCCD: Nhập thông tin CMND/CCCD và tra cứu điểm tín dụng.
