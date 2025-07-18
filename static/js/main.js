@@ -5,8 +5,15 @@ document.addEventListener("DOMContentLoaded", function () {
   const creditResult = document.getElementById("creditResult");
   let currentData = {}; // Biến để lưu dữ liệu form hiện tại
 
+  // Hàm cleanup để remove listeners và nullify
+  function cleanupListeners(element, event, handler) {
+    if (element && handler) {
+      element.removeEventListener(event, handler);
+    }
+  }
+
   // Form submission
-  creditForm.addEventListener("submit", function (e) {
+  const submitHandler = function (e) {
     e.preventDefault();
 
     const formData = new FormData(creditForm);
@@ -43,60 +50,69 @@ document.addEventListener("DOMContentLoaded", function () {
         );
         console.error("Error:", error);
       });
-  });
+  };
+  creditForm.addEventListener("submit", submitHandler);
 
   // Modal handlers
-  document.getElementById("getTipsBtn").addEventListener("click", showTips);
+  const getTipsHandler = showTips;
+  document
+    .getElementById("getTipsBtn")
+    .addEventListener("click", getTipsHandler);
+  const viewHistoryHandler = showHistory;
   document
     .getElementById("viewHistoryBtn")
-    .addEventListener("click", showHistory);
+    .addEventListener("click", viewHistoryHandler);
+  const newSearchHandler = function () {
+    creditResult.style.display = "none";
+    creditForm.style.display = "grid"; // Thay "block" thành "grid"
+    creditForm.reset();
+  };
   document
     .getElementById("newSearchBtn")
-    .addEventListener("click", function () {
-      creditResult.style.display = "none";
-      creditForm.style.display = "grid"; // Thay "block" thành "grid"
-      creditForm.reset();
-    });
+    .addEventListener("click", newSearchHandler);
 
   // Close modal handlers
+  const closeTipsHandler = function () {
+    document.getElementById("tipsModal").style.display = "none";
+  };
   document
     .getElementById("closeTipsModal")
-    .addEventListener("click", function () {
-      document.getElementById("tipsModal").style.display = "none";
-    });
+    .addEventListener("click", closeTipsHandler);
 
+  const closeHistoryHandler = function () {
+    document.getElementById("historyModal").style.display = "none";
+  };
   document
     .getElementById("closeHistoryModal")
-    .addEventListener("click", function () {
-      document.getElementById("historyModal").style.display = "none";
-    });
+    .addEventListener("click", closeHistoryHandler);
 
   // Xóa lịch sử
+  const clearHistoryHandler = function () {
+    if (confirm("Bạn có chắc muốn xóa toàn bộ lịch sử tra cứu?")) {
+      fetch("/api/clear_history", {
+        method: "POST",
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            alert("Đã xóa lịch sử thành công!");
+            showHistory(); // Refresh modal
+          } else {
+            alert("Lỗi khi xóa lịch sử.");
+          }
+        })
+        .catch((error) => {
+          console.error("Error clearing history:", error);
+          alert("Lỗi khi xóa lịch sử.");
+        });
+    }
+  };
   document
     .getElementById("clearHistoryBtn")
-    .addEventListener("click", function () {
-      if (confirm("Bạn có chắc muốn xóa toàn bộ lịch sử tra cứu?")) {
-        fetch("/api/clear_history", {
-          method: "POST",
-        })
-          .then((response) => response.json())
-          .then((data) => {
-            if (data.success) {
-              alert("Đã xóa lịch sử thành công!");
-              showHistory(); // Refresh modal
-            } else {
-              alert("Lỗi khi xóa lịch sử.");
-            }
-          })
-          .catch((error) => {
-            console.error("Error clearing history:", error);
-            alert("Lỗi khi xóa lịch sử.");
-          });
-      }
-    });
+    .addEventListener("click", clearHistoryHandler);
 
   // Close modal when clicking outside
-  window.addEventListener("click", function (event) {
+  const windowClickHandler = function (event) {
     const tipsModal = document.getElementById("tipsModal");
     const historyModal = document.getElementById("historyModal");
 
@@ -106,7 +122,8 @@ document.addEventListener("DOMContentLoaded", function () {
     if (event.target === historyModal) {
       historyModal.style.display = "none";
     }
-  });
+  };
+  window.addEventListener("click", windowClickHandler);
 
   function showLoading() {
     loadingSpinner.style.display = "block";
@@ -176,13 +193,18 @@ document.addEventListener("DOMContentLoaded", function () {
       errorMessage.appendChild(btnContainer);
 
       // Event listeners cho nút
-      btnInternet.addEventListener("click", function () {
+      const enrichInternetHandler = function () {
         enrichData("internet");
-      });
+      };
+      btnInternet.addEventListener("click", enrichInternetHandler);
 
-      btnFile.addEventListener("click", function () {
+      const enrichFileHandler = function () {
         enrichData("file");
-      });
+      };
+      btnFile.addEventListener("click", enrichFileHandler);
+
+      // Cleanup buttons khi error hide (thêm ở showError end)
+      // Nhưng để đơn giản, khi showError gọi lại sẽ remove existingBtns
     }
   }
 
@@ -470,7 +492,7 @@ document.addEventListener("DOMContentLoaded", function () {
       this.style.boxShadow = "0 4px 12px rgba(30, 60, 114, 0.3)";
     };
 
-    continueBtn.addEventListener("click", function () {
+    const continueBtnHandler = function () {
       modal.style.display = "none";
       document.body.removeChild(modal);
       // Continue with credit scoring
@@ -495,7 +517,13 @@ document.addEventListener("DOMContentLoaded", function () {
           showError("Error during credit scoring lookup.");
           console.error("Error:", error);
         });
-    });
+      // Cleanup
+      cleanupListeners(continueBtn, "click", continueBtnHandler);
+      cleanupListeners(closeBtn, "click", closeBtnHandler);
+      cleanupListeners(modal, "click", modalClickHandler);
+      modal = null;
+    };
+    continueBtn.addEventListener("click", continueBtnHandler);
 
     // Close button
     const closeBtn = document.createElement("button");
@@ -524,11 +552,17 @@ document.addEventListener("DOMContentLoaded", function () {
       this.style.boxShadow = "0 4px 12px rgba(149, 165, 166, 0.3)";
     };
 
-    closeBtn.addEventListener("click", function () {
+    const closeBtnHandler = function () {
       modal.style.display = "none";
       document.body.removeChild(modal);
       hideLoading();
-    });
+      // Cleanup
+      cleanupListeners(continueBtn, "click", continueBtnHandler);
+      cleanupListeners(closeBtn, "click", closeBtnHandler);
+      cleanupListeners(modal, "click", modalClickHandler);
+      modal = null;
+    };
+    closeBtn.addEventListener("click", closeBtnHandler);
 
     buttonContainer.appendChild(continueBtn);
     buttonContainer.appendChild(closeBtn);
@@ -538,13 +572,19 @@ document.addEventListener("DOMContentLoaded", function () {
     modal.appendChild(modalContent);
 
     // Close modal when clicking outside
-    modal.addEventListener("click", function (event) {
+    const modalClickHandler = function (event) {
       if (event.target === modal) {
         modal.style.display = "none";
         document.body.removeChild(modal);
         hideLoading();
+        // Cleanup
+        cleanupListeners(continueBtn, "click", continueBtnHandler);
+        cleanupListeners(closeBtn, "click", closeBtnHandler);
+        cleanupListeners(modal, "click", modalClickHandler);
+        modal = null;
       }
-    });
+    };
+    modal.addEventListener("click", modalClickHandler);
 
     // Responsive design
     const mediaQuery = window.matchMedia("(max-width: 768px)");
@@ -763,19 +803,72 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Format national ID input
-  document.getElementById("nationalId").addEventListener("input", function (e) {
+  const nationalIdInputHandler = function (e) {
     let value = e.target.value.replace(/\D/g, ""); // Remove non-digits
     if (value.length > 12) {
       value = value.slice(0, 12);
     }
     e.target.value = value;
-  });
+  };
+  document
+    .getElementById("nationalId")
+    .addEventListener("input", nationalIdInputHandler);
 
   // Format full name input
-  document.getElementById("fullName").addEventListener("input", function (e) {
+  const fullNameInputHandler = function (e) {
     let value = e.target.value.toUpperCase();
     // Remove special characters except spaces
     value = value.replace(/[^A-Z\s]/g, "");
     e.target.value = value;
+  };
+  document
+    .getElementById("fullName")
+    .addEventListener("input", fullNameInputHandler);
+
+  // Cleanup khi trang unload (tùy chọn, để tránh leak nếu SPA)
+  window.addEventListener("beforeunload", function () {
+    cleanupListeners(creditForm, "submit", submitHandler);
+    cleanupListeners(
+      document.getElementById("getTipsBtn"),
+      "click",
+      getTipsHandler
+    );
+    cleanupListeners(
+      document.getElementById("viewHistoryBtn"),
+      "click",
+      viewHistoryHandler
+    );
+    cleanupListeners(
+      document.getElementById("newSearchBtn"),
+      "click",
+      newSearchHandler
+    );
+    cleanupListeners(
+      document.getElementById("closeTipsModal"),
+      "click",
+      closeTipsHandler
+    );
+    cleanupListeners(
+      document.getElementById("closeHistoryModal"),
+      "click",
+      closeHistoryHandler
+    );
+    cleanupListeners(
+      document.getElementById("clearHistoryBtn"),
+      "click",
+      clearHistoryHandler
+    );
+    cleanupListeners(window, "click", windowClickHandler);
+    cleanupListeners(
+      document.getElementById("nationalId"),
+      "input",
+      nationalIdInputHandler
+    );
+    cleanupListeners(
+      document.getElementById("fullName"),
+      "input",
+      fullNameInputHandler
+    );
+    currentData = null;
   });
 });

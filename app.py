@@ -113,6 +113,15 @@ SAMPLE_USERS = {
     }
 }
 
+# Load model global để reuse
+MODEL_PATH = "models/credit_score_model.pkl"
+model = None
+try:
+    model = joblib.load(MODEL_PATH)
+    print("Model loaded successfully.")
+except Exception as e:
+    print(f"Error loading model globally: {e}")
+
 def create_dynamic_prompt(known_info, missing_fields):
     known_info_str = "\n".join([f"- {key.replace('_', ' ').title()}: {value}" for key, value in known_info.items()])
     missing_fields_str = ", ".join([f"'{field}'" for field in missing_fields])
@@ -206,13 +215,6 @@ def enrich_customer_row(row):
     time.sleep(2)
     return row
 
-def load_model(path: str):
-    try:
-        return joblib.load(path)
-    except Exception as e:
-        print(f"Error loading model: {e}")
-        return None
-
 def preprocess_input(df):
     df["credit_mix"] = df["credit_mix"].map({"Good": 1, "Standard": 0, "Bad": -1})
     df["payment_behaviour"] = df["payment_behaviour"].map({
@@ -305,9 +307,8 @@ def call_bedrock_claude(prompt):
         print(f"Error calling Bedrock: {e}")
         return ""
 
-def explain_credit_score(model_path, input_data):
+def explain_credit_score(input_data):
     try:
-        model = load_model(model_path)
         if model is None:
             raise Exception("Model could not be loaded")
         normalized_data = {k.strip().lower().replace(" ", "_"): v for k, v in input_data.items()}
@@ -343,6 +344,13 @@ def explain_credit_score(model_path, input_data):
             f"Vui lòng kiểm tra lại thông tin hoặc thử lại sau."
         )
         return score_level, random_score, explanation
+    finally:
+        if 'df' in locals():
+            del df
+        if 'shap_values' in locals():
+            del shap_values
+        if 'proba' in locals():
+            del proba
 
 def generate_random_credit_data(full_name, national_id):
     return {
@@ -472,8 +480,7 @@ def lookup_credit_score():
         if not user_data:
             return jsonify({'success': False, 'message': 'Không tìm thấy thông tin người dùng. Vui lòng kiểm tra lại họ tên và số CMND/CCCD.'}), 404
 
-        model_path = "models/credit_score_model.pkl"
-        score_level, fico_score, explanation = explain_credit_score(model_path, user_data)
+        score_level, fico_score, explanation = explain_credit_score(user_data)
 
         result_data = {
             'full_name': user_data['full_name'],
@@ -575,6 +582,11 @@ def enrich_from_internet():
     except Exception as e:
         print(f"Error in enrich_from_internet: {e}")
         return jsonify({'success': False, 'message': 'Lỗi khi bổ sung dữ liệu từ internet.'}), 500
+    finally:
+        if 'df_to_process' in locals():
+            del df_to_process
+        if 'enriched_customer' in locals():
+            del enriched_customer
 
 @app.route('/api/enrich_from_file', methods=['POST'])
 def enrich_from_file():
@@ -650,6 +662,11 @@ def enrich_from_file():
     except Exception as e:
         print(f"Error in enrich_from_file: {e}")
         return jsonify({'success': False, 'message': 'Lỗi khi bổ sung dữ liệu từ file.'}), 500
+    finally:
+        if 'df_to_process' in locals():
+            del df_to_process
+        if 'enriched_customer' in locals():
+            del enriched_customer
 
 @app.route('/api/history', methods=['GET'])
 def get_credit_history():
